@@ -9,12 +9,12 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-Explain how your project works
+8 bit chip running custom isa. Using the RP2008 for Ram emulation.
 
 ## How to test
 
-Explain how to use your project
+Work in progress.
 
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+No external Hardware needed.
