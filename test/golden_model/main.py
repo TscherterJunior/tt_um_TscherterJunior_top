@@ -4,7 +4,7 @@ np.seterr(over='ignore')
 
 class CPU:
   
-    regs = np.array([0,0,0,0,0,0,0,0], dtype=np.uint8)
+    regs = np.array([0b0,0b0,0b0,0b0,0b0,0b0,0b0,0b0], dtype=np.uint8)
     accs = regs[0:1]
     ip : np.uint8 = np.uint8(0)
     flags : list[bool] = [False, False]
@@ -29,10 +29,69 @@ class CPU:
         accval : np.uint8 = self.accs[acc]
         regval : np.uint8 = self.regs[reg]
 
-        # patching in add imediate instruction
-        if(instruction & 0b1110_0000 == 0b000):
-            opcode = 0b0010
-            regval = (instruction & 0b0111) | ((instruction & 0b0001_0000) >> 1)
+        
+        if(instruction & 0b1100_0000 == 0b1000_0000):
+            match (instruction >> 4) & 0b11:
+                case 0b00:
+                    self.accs[acc] = regval
+                
+                case 0b01:
+                    self.regs[reg] = accval
+                
+                case 0b10:
+                    self.accs[acc] = self.ram.read(False,accval)
+                
+                case 0b11:
+                    self.ram.write(regval,accval)
+                
+                case _:
+                    raise ValueError()
+                
+
+        elif(opcode == 0b0100):
+            if(self.flags == [False, False] and instruction & 0b1000): self.flags = [True,True]
+            elif(self.flags == [False, True] and instruction & 0b0100) : self.flags = [True, True]
+            elif(self.flags == [True, False] and instruction & 0b0010) : self.flags = [True, True]
+            elif(self.flags == [True,True] and instruction & 0b0001) : self.flags = [True, True]
+        
+        elif(opcode == 0b0101):
+            a : np.uint8 = self.accs[0]
+            b : np.uint8 = self.accs[1]
+
+            sa : np.int8 = a.astype(np.int8)
+            sb : np.int8 = b.astype(np.int8)
+
+            # TODO: find use for the free mistery bit
+
+            # signed
+            if(sa - sb > 0 and instruction &  0b0100): self.flags[0] = True
+            elif(sa == sb and instruction & 0b0010): self.flags[0] = True
+            elif(sa - sb < 0 and instruction & 0b0001): self.flags[0] = True
+
+            #unsigned
+            if(a - b > 0 and instruction &  0b0100): self.flags[1] = True
+            elif(a == b and instruction & 0b0010): self.flags[1] = True
+            elif(a - b < 0 and instruction & 0b0001): self.flags[1] = True
+
+        
+        elif(opcode == 0b0110):
+            if(self.flags[0]):
+                if(0b1000 & instruction):
+                    self.ram.write(np.uint8(0xFF),self.regs[7])
+                
+                self.ip = regval
+                return
+            
+        else:
+            # patching in add imediate instruction
+            if(instruction & 0b1110_0000 == 0b0000_0000):
+                opcode = 0b0010
+                regval = (instruction & 0b0111) | ((instruction & 0b0001_0000) >> 1)
+
+            self.accs[acc], self.flags = self.alu.compute(opcode,accval, regval)
+
+        self.ip += 1
+        return
 
         
             
