@@ -64,14 +64,14 @@ class CPU:
             # TODO: find use for the free mistery bit
 
             # signed
-            if(sa - sb > 0 and instruction &  0b0100): self.flags[0] = True
-            elif(sa == sb and instruction & 0b0010): self.flags[0] = True
-            elif(sa - sb < 0 and instruction & 0b0001): self.flags[0] = True
+            if(sa - sb > 0 and instruction &  0b0100): self.flags[1] = True
+            elif(sa == sb and instruction & 0b0010): self.flags[1] = True
+            elif(sa - sb < 0 and instruction & 0b0001): self.flags[1] = True
 
             #unsigned
-            if(a - b > 0 and instruction &  0b0100): self.flags[1] = True
-            elif(a == b and instruction & 0b0010): self.flags[1] = True
-            elif(a - b < 0 and instruction & 0b0001): self.flags[1] = True
+            if(a - b > 0 and instruction &  0b0100): self.flags[0] = True
+            elif(a == b and instruction & 0b0010): self.flags[0] = True
+            elif(a - b < 0 and instruction & 0b0001): self.flags[0] = True
 
         
         elif(opcode == 0b0110):

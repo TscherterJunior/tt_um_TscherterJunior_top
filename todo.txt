@@ -1,0 +1,23 @@
+- [x] set alu input based on imediate when doing add imediate
+- [x] implement add imediate in alu
+- [x] set newval
+- [x] set flags_d
+- [ ] fix address production
+    we use the address of the current instruction in the current cycle
+    no bloody pipelining
+
+- [ ] fix instruction fetch 
+- [ ] fix/implement instruction pointer generation => _d_q
+- [ ] implement the jump
+- [ ] implement memory write
+- [ ] implement memory read
+
+
+Message to me tommorow:
+
+- Fix the instruction saving by:
+ - adding a layer of naming indirection
+ - instr = state == fetch ? instruction_d : instruction_q
+
+ where instruction_d = ui_in
+ and   instruction_q = the instruction buffering register

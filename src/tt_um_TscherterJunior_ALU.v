@@ -25,52 +25,62 @@ module tt_um_TscherterJunior_ALU (
         acc_o = 0;
         flags_o = 0;
 
-        case (opcode_i)
-            4'b0010 : begin // ADD
+        if(opcode_i[3:1] == 3'b000) begin // ADD imediate
+
                 tempres = acc_i + operand_i;
                 acc_o = tempres[7:0];
                 flags_o[1] = tempres[8]; // carry
                 flags_o[0] = (acc_i[7] == operand_i[7]) && (acc_i[7] != tempres[7]);
 
-            end
-            4'b0011 : begin // SUB
-                tempres = acc_i - operand_i;
-                acc_o = tempres[7:0];
-                flags_o[1] = tempres[8]; // carry
-                flags_o[0] = (~acc_i[7] & operand_i[7] & tempres[7]) || (acc_i[7] & ~operand_i[7] & ~tempres[7]);
+        end else begin
 
-            end
-            4'b0111 : begin // XOR
-                acc_o = acc_i ^ operand_i;
-                flags_o[0] = (acc_o == 8'b0);
-                flags_o[1] = ~^acc_o; //parity
-            end
-            4'b1100 : begin // And
-                acc_o = acc_i & operand_i;
-                flags_o[0] = (acc_o == 8'b0);
-                flags_o[1] = ~^acc_o; //parity
-            end            
-            4'b1101 : begin // OR
-                acc_o = acc_i | operand_i;
-                flags_o[0] = (acc_o == 8'b0);
-                flags_o[1] = ~^acc_o; //parity
-            end   
-            4'b1110 : begin // shift left logical
-                acc_o = acc_i << operand_i[2:0];
-                flags_o[0] = (acc_o == 8'b0);
-                flags_o[1] = acc_o[7]; //sign
-            end   
-            4'b1111 : begin // shift right logical
-                acc_o = acc_i >> operand_i[2:0];
-                flags_o[0] = (acc_o == 8'b0);
-                flags_o[1] = acc_o[7]; //sign
-            end   
-            default : begin
-                acc_o = '0;
-                flags_o = '0;
-            end
-        endcase
+            case (opcode_i)
+                4'b0010 : begin // ADD
+                    tempres = acc_i + operand_i;
+                    acc_o = tempres[7:0];
+                    flags_o[1] = tempres[8]; // carry
+                    flags_o[0] = (acc_i[7] == operand_i[7]) && (acc_i[7] != tempres[7]);
 
+                end
+                4'b0011 : begin // SUB
+                    tempres = acc_i - operand_i;
+                    acc_o = tempres[7:0];
+                    flags_o[1] = tempres[8]; // carry
+                    flags_o[0] = (~acc_i[7] & operand_i[7] & tempres[7]) || (acc_i[7] & ~operand_i[7] & ~tempres[7]);
+
+                end
+                4'b0111 : begin // XOR
+                    acc_o = acc_i ^ operand_i;
+                    flags_o[0] = (acc_o == 8'b0);
+                    flags_o[1] = ~^acc_o; //parity
+                end
+                4'b1100 : begin // And
+                    acc_o = acc_i & operand_i;
+                    flags_o[0] = (acc_o == 8'b0);
+                    flags_o[1] = ~^acc_o; //parity
+                end            
+                4'b1101 : begin // OR
+                    acc_o = acc_i | operand_i;
+                    flags_o[0] = (acc_o == 8'b0);
+                    flags_o[1] = ~^acc_o; //parity
+                end   
+                4'b1110 : begin // shift left logical
+                    acc_o = acc_i << operand_i[2:0];
+                    flags_o[0] = (acc_o == 8'b0);
+                    flags_o[1] = acc_o[7]; //sign
+                end   
+                4'b1111 : begin // shift right logical
+                    acc_o = acc_i >> operand_i[2:0];
+                    flags_o[0] = (acc_o == 8'b0);
+                    flags_o[1] = acc_o[7]; //sign
+                end   
+                default : begin
+                    acc_o = '0;
+                    flags_o = '0;
+                end
+            endcase
+
+        end
 
     end
 
