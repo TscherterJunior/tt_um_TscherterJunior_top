@@ -143,6 +143,7 @@ class ALU:
             return out, flags
 
 
+# TODO: add instr bit to write op
 class RAM:
 
     ipage = 0
