@@ -16,22 +16,37 @@ module tt_um_TscherterJunior_top (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-// Renaming Physical Pins
-  uio_oe = 1'b1;
 
-  // input wires renamed
-  wire [7:0] data_i, data_o;
-  assign data_i <= ui_in;
-  assign data_o <= uio_out;
+// data path wires
 
-  // output wires renamed
-  reg write_en_o;
-  reg instr_en_o;
+  // Instruction data 
+  reg [7:0] used_instruction;
+  reg [3:0] opcode;
+  reg [3:0] decide_mask;
+  reg [3:0] compare_mode;
 
-  assign uo_out[0] <= write_en_o;
-  assign uo_out[1] <= instr_en_o;
+  reg [2:0] used_acc;
+  reg [2:0] used_reg;
 
-  
+  reg [7:0] imediate;
+
+  reg [7:0] mem_address;
+  reg [7:0] mem_write_data;
+
+  // Operand values
+  reg [7:0] operand_primary, operand_secondary;
+
+  // Register value sources
+  reg [7:0] alu_out_val;
+
+  reg [7:0] dest_reg_oldvalue;
+  reg [7:0] dest_reg_newvalue;
+
+  // Flag sources
+  reg [1:0] decide_flags;
+  reg [1:0] compare_flags;
+  reg [1:0] alu_out_flags;
+
 // Defining ALL FFs
 
   // CPU Registers
@@ -56,12 +71,31 @@ module tt_um_TscherterJunior_top (
 
   // CPU FSM
   reg [2:0] state_q, state_d;
+  
+// Renaming Physical Pins
+  assign uio_oe = 8'b1111_1111;
+
+  // input wires renamed
+  wire  [7:0] data_i;
+  reg   [7:0] data_o;
+  assign data_i = ui_in;
+
+  // output wires renamed
+  reg write_en_o;
+  reg instr_en_o;
+
+  assign uio_out = data_o;
+
+  assign uo_out[0] = write_en_o;
+  assign uo_out[1] = instr_en_o;
+  assign uo_out[4:2] = state_d; // unused uo_out pins(repurpouse for driving leds if time remains)
+  assign uo_out[7:5] = state_q;
 
 // Defining Constants
 
   // CPU FSM States
   localparam Fetch_state          = 3'b000;
-  localparam Load_state           = 3'b001:
+  localparam Load_state           = 3'b001;
   localparam Store_Address_state  = 3'b010;
   localparam Store_Data_state     = 3'b011;
   localparam Jump_Address_state   = 3'b100;
@@ -69,13 +103,13 @@ module tt_um_TscherterJunior_top (
 
   // Register codes
   localparam Reg0  = 3'b000;
-  localparam Reg1  = 3'b001:
+  localparam Reg1  = 3'b001;
   localparam Reg2  = 3'b010;
   localparam Reg3  = 3'b011;
   localparam Reg4  = 3'b100;
   localparam Reg5  = 3'b101;
-  localparam Reg6  = 2'b110;
-  localparam reg7  = 2'b111;
+  localparam Reg6  = 3'b110;
+  localparam Reg7  = 3'b111;
 
 
   // Opcodes
@@ -107,15 +141,17 @@ module tt_um_TscherterJunior_top (
       // Default state
       state_d =  Fetch_state;
 
-      case state_q
-        Fetch_state: case opcode
-            Ldm_opc : state_d = Load_state;
-            Stm_opc : state_d = Store_Address_state;
-            Jmp_opc : begin
-              if(instr[3])  state_d = Jump_Address_state;
-              else          state_d = Fetch_state;
-            end
-        endcase
+      case (state_q) 
+        Fetch_state: begin
+            case (opcode)
+              Ldm_opc : state_d = Load_state;
+              Stm_opc : state_d = Store_Address_state;
+              Jmp_opc : begin
+                if(used_instruction[3])  state_d = Jump_Address_state;
+                else          state_d = Fetch_state;
+              end            
+          endcase 
+        end
         Load_state: state_d = Fetch_state;
         Store_Address_state: state_d = Store_Data_state;
         Store_Data_state: state_d = Fetch_state;
@@ -126,8 +162,48 @@ module tt_um_TscherterJunior_top (
 
   // Assign FF
   always @(posedge clk, rst_n) begin
-      if(! rst_n) state_q <= Fetch_state;
-      else        state_q <= state_d;
+    if(! rst_n) state_q <= Fetch_state;
+    else        state_q <= state_d;
+  end
+
+  always @(posedge clk, rst_n) begin
+    if(!rst_n) begin
+  // CPU Registers
+      reg0_q <= 8'b0000_0000;
+      reg1_q <= 8'b0000_0000;
+      reg2_q <= 8'b0000_0000;
+      reg3_q <= 8'b0000_0000;
+
+      reg4_q <= 8'b0000_0000;
+      reg5_q <= 8'b0000_0000;
+      reg6_q <= 8'b0000_0000;
+      reg7_q <= 8'b0000_0000;
+
+      // CPU Flags
+      flags_q <= 2'b00;
+
+      // Instruction Pointer
+      instruction_pointer_q = 8'b0000_0000;
+
+      // Instruction Buffer
+      instruction_buffer_q = 8'b0000_0000;
+    end else begin
+      reg0_q <= reg0_d;
+      reg1_q <= reg1_d;
+      reg2_q <= reg2_d;
+      reg3_q <= reg3_d;
+
+      reg4_q <= reg4_d;
+      reg5_q <= reg5_d;
+      reg6_q <= reg6_d;
+      reg7_q <= reg7_d;
+
+      flags_q <= flags_d;
+
+      instruction_pointer_q <= instruction_pointer_d;
+
+      instruction_buffer_q <= instruction_buffer_d;
+    end
   end
 
   // Output gen:
@@ -146,7 +222,7 @@ module tt_um_TscherterJunior_top (
       write_en_o = 1'b0;
       use_buffered_instr = 1'b1;
 
-      case state_q
+      case (state_q)
         Fetch_state: begin 
           instr_en_o = 1'b1;
           write_en_o = 1'b0;
@@ -167,12 +243,12 @@ module tt_um_TscherterJunior_top (
           write_en_o = 1'b1;
           use_buffered_instr = 1'b1;
         end
-        Jump_Address_state begin 
+        Jump_Address_state: begin 
           instr_en_o = 1'b1;
           write_en_o = 1'b1;
           use_buffered_instr = 1'b1;
         end
-        Jump_Data_state begin 
+        Jump_Data_state: begin 
           instr_en_o = 1'b1;
           write_en_o = 1'b1;
           use_buffered_instr = 1'b1;
@@ -203,16 +279,15 @@ module tt_um_TscherterJunior_top (
   reg source_reg_mem;
 
   // address sources
-  reg source_address_ip:
-  reg source_address_reg:
-  //reg source_address_
+  reg source_address_ip;
+  reg source_address_reg;
 
   always @(*) begin
   
       write_to_reg = (
         state_q == Fetch_state && !(opcode == Dcd_opc || opcode == Cmp_opc || opcode == Jmp_opc || opcode == Stm_opc)
         || state_q == Load_state
-      )
+      );
 
       dest_reg = opcode == Str_opc ? used_reg : used_acc;
 
@@ -220,9 +295,10 @@ module tt_um_TscherterJunior_top (
       source_flag_compare = opcode == Cmp_opc && state_q == Fetch_state;
       source_flag_alu     = (opcode[3:2] == 2'b00 || opcode[3:2] == 2'b11 || opcode == Xor_opc) && state_q == Fetch_state;
 
+      use_imediate        = used_instruction[7:5] == 3'b000;
       jump                = (opcode == Jmp_opc && flags_q[0] && state_q == Fetch_state) || opcode == Jump_Data_state;
 
-      source_flag_alu     = source_flag_alu;
+      source_reg_alu     = source_flag_alu;
       source_reg_acc      = opcode == Str_opc && state_q == Fetch_state;
       source_reg_reg      = opcode == Ldr_opc && state_q == Fetch_state;
       source_reg_mem      = opcode == Ldm_opc && state_q == Load_state;
@@ -236,42 +312,13 @@ module tt_um_TscherterJunior_top (
 
 // Datapath
 
-  // data path wires
-
-    // Instruction data 
-    reg [7:0] used_instruction;
-    reg [3:0] opcode;
-    reg [3:0] decide_mask;
-    reg [3:0] compare_mode;
-
-    reg [2:0] used_acc;
-    reg [2:0] used_reg;
-
-    reg [7:0] imediate;
-
-    reg [7:0] mem_address;
-    reg [7:0] mem_write_data;
-
-    // Operand values
-    reg [7:0] operand_primary, operand_secondary;
-
-    // Register value sources
-    reg [7:0] alu_out_val;
-
-    reg [7:0] dest_reg_oldvalue;
-    reg [7:0] dest_reg_newvalue;
-
-    // Flag sources
-    reg [1:0] decide_flags;
-    reg [1:0] compare_flags;
-    reg [1:0] alu_out_flags 
 
   always @(*) begin
 
     used_instruction  = use_buffered_instr ? instruction_buffer_q : instruction_buffer_d;
     opcode            = used_instruction[7:4];
     decide_mask       = used_instruction[3:0];
-    compare_mode       = used_instruction[3:0];
+    compare_mode      = used_instruction[3:0];
     used_acc          = used_instruction[3] ? Reg1 : Reg0;
     used_reg          = used_instruction[2:0];
 
@@ -287,7 +334,7 @@ module tt_um_TscherterJunior_top (
                         used_reg == Reg4  ? reg4_q    :
                         used_reg == Reg5  ? reg5_q    :
                         used_reg == Reg6  ? reg6_q    :
-                        reg7;
+                        reg7_q;
 
     dest_reg_oldvalue = dest_reg == Reg0  ? reg0_q    :
                         dest_reg == Reg1  ? reg1_q    :
@@ -297,7 +344,7 @@ module tt_um_TscherterJunior_top (
                         dest_reg == Reg4  ? reg4_q    :
                         dest_reg == Reg5  ? reg5_q    :
                         dest_reg == Reg6  ? reg6_q    :
-                        reg7;
+                        reg7_q;
 
     dest_reg_newvalue = source_reg_acc ? operand_primary    :
                         source_reg_alu ? alu_out_val        :
@@ -315,12 +362,12 @@ module tt_um_TscherterJunior_top (
     compare_flags[1] = (
                 $signed(reg0_q) > $signed((compare_mode[3] ? reg1_q : 8'b0000_0000)) &&   compare_mode[1] ||
                 reg0_q == (compare_mode[3] ? reg1_q : 8'b0000_0000) && compare_mode[0]
-              ) ? 1'b1 : 1'b0
+              ) ? 1'b1 : 1'b0; 
 
     compare_flags[0] = (
                 reg0_q > (compare_mode[3] ? reg1_q : 8'b0000_0000) &&   compare_mode[1] ||
                 reg0_q == (compare_mode[3] ? reg1_q : 8'b0000_0000) && compare_mode[0]
-              ) ? 1'b1 : 1'b0
+              ) ? 1'b1 : 1'b0;
 
     mem_address = source_address_ip   ? instruction_pointer_q :
                   source_address_reg  ? operand_secondary     :
@@ -333,6 +380,7 @@ module tt_um_TscherterJunior_top (
                         state_q == Load_state || state_q == Jump_Address_state ?
                         mem_address : mem_write_data;
     
+
   end
 
   // Instanciate ALU
@@ -344,7 +392,7 @@ module tt_um_TscherterJunior_top (
 
     .acc_o(alu_out_val),
     .flags_o(alu_out_flags)
-  )
+  );
 
   // New FF values
 
@@ -368,10 +416,10 @@ module tt_um_TscherterJunior_top (
 
 
     // Instruction Pointer
-    instruction_pointer_d = jump ? operand_secondary : instruction_buffer_q + 8'b0000_0001;
+    instruction_pointer_d = jump ? operand_secondary : instruction_pointer_q + 8'b0000_0001;
 
     // Instruction Buffer
-    instruction_buffer_d = state_q == Fetch ? data_i : instruction_buffer_q;
+    instruction_buffer_d = state_q == Fetch_state ? data_i : instruction_buffer_q;
 
   end
 

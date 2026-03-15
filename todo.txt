@@ -1,7 +1,1 @@
-- [ ] assign new reg vals
-    - [x] assign flags_d
-        - [x] assign from decide module if necesary
-            - [x] generate decide values
-        - [x] assign from compare module if necesary
-            - [x] generate compare values
-    - [x] assign new cpu reg vals
+- [ ] ?need to fix loading? 
