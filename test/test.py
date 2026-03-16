@@ -7,6 +7,7 @@ from cocotb.triggers import ClockCycles
 from cocotb.triggers import ReadWrite
 
 
+
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
@@ -26,6 +27,10 @@ async def test_project(dut):
 
     dut._log.info("Test project behavior")
 
+    async def step(num = 1,d = dut):
+        await ClockCycles(d.clk, num)
+        await ReadWrite()
+
     # Set the input values you want to test
     #dut.ui_in.value = 20
     #dut.uio_in.value = 30
@@ -42,7 +47,13 @@ async def test_project(dut):
 
     dut.ui_in.value = instr_mem[0]
 
-    await ClockCycles(dut.clk, 1)
+    await ReadWrite()
+
+    assert dut.uio_oe.value == 0b1111_1111
+    assert dut.uo_out.value == 0b0000_0010
+    assert dut.uio_out.value == 0b0000_0000
+
+    await step()
 
     assert dut.uio_oe.value == 0b1111_1111
     assert dut.uo_out.value == 0b0000_0010
@@ -50,18 +61,19 @@ async def test_project(dut):
 
     dut.ui_in.value = instr_mem[1]
 
-    assert dut.uio_oe.value == 0b1111_1111
-    assert dut.uo_out.value == 0b0000_0010
-    assert dut.uio_out.value == 0b0000_0001
-
-    await ReadWrite()
+    await step()
 
     assert dut.uio_oe.value == 0b1111_1111
-    assert dut.uo_out.value == 0b0000_0010
-    assert dut.uio_out.value == 0b0000_0010
+    assert dut.uo_out.value == 0b0100_0001
+    assert dut.uio_out.value == 0b0000_1001
 
-    await ClockCycles(dut.clk, 2)
+    await step()
 
+    assert dut.uio_oe.value == 0b1111_1111
+    assert dut.uo_out.value == 0b0110_0001
+    assert dut.uio_out.value == 0b0000_1001
+
+    await step()
 
     # Wait for one clock cycle to see the output values
     #await ClockCycles(dut.clk, 1)
