@@ -323,7 +323,7 @@ module tt_um_TscherterJunior_top (
   always @(*) begin
 
     //used_instruction  = use_buffered_instr ? instruction_buffer_q : instruction_buffer_d;
-    use_buffered_instr = use_buffered_instr ? instruction_buffer_q : data_i;
+    used_instruction = use_buffered_instr ? instruction_buffer_q : data_i;
     opcode            = used_instruction[7:4];
     decide_mask       = used_instruction[3:0];
     compare_mode      = used_instruction[3:0];
