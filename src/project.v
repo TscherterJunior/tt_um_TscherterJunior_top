@@ -380,7 +380,7 @@ module tt_um_TscherterJunior_top (
                   (source_address_reg  ? operand_secondary     :
                   8'b1111_1111)); // constand address used for paged jumps
     
-    mem_write_data = ((state_q == Store_Data_state) ?  operand_primary : reg7_q; )          // source for page number when jumping
+    mem_write_data = ((state_q == Store_Data_state) ?  operand_primary : reg7_q);          // source for page number when jumping
 
     data_o = (state_q == Fetch_state || state_q == Store_Address_state ||
                         state_q == Load_state || state_q == Jump_Address_state ) ?
