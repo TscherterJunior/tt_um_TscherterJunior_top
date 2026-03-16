@@ -166,12 +166,12 @@ module tt_um_TscherterJunior_top (
   end
 
   // Assign FF
-  always @(posedge clk, rst_n) begin
+  always @(posedge clk or negedge rst_n) begin
     if(! rst_n) state_q <= Fetch_state;
     else        state_q <= state_d;
   end
 
-  always @(posedge clk, rst_n) begin
+  always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
   // CPU Registers
       reg0_q <= 8'b0000_0000;
