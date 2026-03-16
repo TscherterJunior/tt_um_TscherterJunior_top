@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* verilator lint_off UNOPTFLAT */
+
 `default_nettype none
 
 module tt_um_TscherterJunior_top (
