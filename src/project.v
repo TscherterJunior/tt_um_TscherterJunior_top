@@ -115,8 +115,8 @@ module tt_um_TscherterJunior_top (
   // Opcodes
   localparam Addi_opc_3 = 3'b000;
   //----------------------------;
-  localparam Add_opc    = 4'b0010;
-  localparam Sub_opc    = 4'b0011;
+  //localparam Add_opc    = 4'b0010;
+  //localparam Sub_opc    = 4'b0011;
 
   localparam Dcd_opc    = 4'b0100;
   localparam Cmp_opc    = 4'b0101;
@@ -128,10 +128,10 @@ module tt_um_TscherterJunior_top (
   localparam Ldm_opc    = 4'b1010;
   localparam Stm_opc    = 4'b1011;
 
-  localparam And_opc    = 4'b1100;
-  localparam Or_opc     = 4'b1101;
-  localparam Sll_opc    = 4'b1110;
-  localparam Srl_opc    = 4'b1111;
+  //localparam And_opc    = 4'b1100;
+  //localparam Or_opc     = 4'b1101;
+  //localparam Sll_opc    = 4'b1110;
+  //localparam Srl_opc    = 4'b1111;
 
 
 // CPU FSM 
@@ -149,7 +149,8 @@ module tt_um_TscherterJunior_top (
               Jmp_opc : begin
                 if(used_instruction[3])  state_d = Jump_Address_state;
                 else          state_d = Fetch_state;
-              end            
+              end
+              default : state_d = Fetch_state;            
           endcase 
         end
         Load_state: state_d = Fetch_state;
@@ -157,6 +158,7 @@ module tt_um_TscherterJunior_top (
         Store_Data_state: state_d = Fetch_state;
         Jump_Address_state: state_d = Jump_Data_state;
         Jump_Data_state: state_d = Fetch_state;
+        default : state_d = Fetch_state; // should never be hit
       endcase
   end
 
@@ -183,10 +185,10 @@ module tt_um_TscherterJunior_top (
       flags_q <= 2'b00;
 
       // Instruction Pointer
-      instruction_pointer_q = 8'b0000_0000;
+      instruction_pointer_q <= 8'b0000_0000;
 
       // Instruction Buffer
-      instruction_buffer_q = 8'b0000_0000;
+      instruction_buffer_q <= 8'b0000_0000;
     end else begin
       reg0_q <= reg0_d;
       reg1_q <= reg1_d;
@@ -253,6 +255,11 @@ module tt_um_TscherterJunior_top (
           write_en_o = 1'b1;
           use_buffered_instr = 1'b1;
         end
+        default : begin // shpuld never be hit
+          instr_en_o = 1'b1;
+          write_en_o = 1'b0;
+          use_buffered_instr = 1'b0;
+        end 
       endcase
   end
 
@@ -289,14 +296,14 @@ module tt_um_TscherterJunior_top (
         || state_q == Load_state
       );
 
-      dest_reg = opcode == Str_opc ? used_reg : used_acc;
+      dest_reg = ((opcode == Str_opc) ? used_reg : used_acc);
 
       source_flag_decide  = opcode == Dcd_opc && state_q == Fetch_state;
       source_flag_compare = opcode == Cmp_opc && state_q == Fetch_state;
       source_flag_alu     = (opcode[3:2] == 2'b00 || opcode[3:2] == 2'b11 || opcode == Xor_opc) && state_q == Fetch_state;
 
-      use_imediate        = used_instruction[7:5] == 3'b000;
-      jump                = (opcode == Jmp_opc && flags_q[0] && state_q == Fetch_state) || opcode == Jump_Data_state;
+      use_imediate        = used_instruction[7:5] == Addi_opc_3;
+      jump                = (opcode == Jmp_opc && flags_q[0] && state_q == Fetch_state) || state_q == Jump_Data_state;
 
       source_reg_alu     = source_flag_alu;
       source_reg_acc      = opcode == Str_opc && state_q == Fetch_state;
@@ -326,25 +333,25 @@ module tt_um_TscherterJunior_top (
 
     operand_primary   = used_acc == Reg0 ? reg0_q : reg1_d;
     operand_secondary = use_imediate      ? imediate  :
-                        used_reg == Reg0  ? reg0_q    :
-                        used_reg == Reg1  ? reg1_q    :
-                        used_reg == Reg2  ? reg2_q    :
-                        used_reg == Reg3  ? reg3_q    :
+                        ((used_reg == Reg0)  ? reg0_q    :
+                        ((used_reg == Reg1)  ? reg1_q    :
+                        ((used_reg == Reg2)  ? reg2_q    :
+                        ((used_reg == Reg3)  ? reg3_q    :
 
-                        used_reg == Reg4  ? reg4_q    :
-                        used_reg == Reg5  ? reg5_q    :
-                        used_reg == Reg6  ? reg6_q    :
-                        reg7_q;
+                        ((used_reg == Reg4)  ? reg4_q    :
+                        ((used_reg == Reg5)  ? reg5_q    :
+                        ((used_reg == Reg6)  ? reg6_q    :
+                        reg7_q)))))));
 
-    dest_reg_oldvalue = dest_reg == Reg0  ? reg0_q    :
-                        dest_reg == Reg1  ? reg1_q    :
-                        dest_reg == Reg2  ? reg2_q    :
-                        dest_reg == Reg3  ? reg3_q    :
+    dest_reg_oldvalue = ((dest_reg == Reg0)  ? reg0_q    :
+                        ((dest_reg == Reg1)  ? reg1_q    :
+                        ((dest_reg == Reg2)  ? reg2_q    :
+                        ((dest_reg == Reg3)  ? reg3_q    :
 
-                        dest_reg == Reg4  ? reg4_q    :
-                        dest_reg == Reg5  ? reg5_q    :
-                        dest_reg == Reg6  ? reg6_q    :
-                        reg7_q;
+                        ((dest_reg == Reg4)  ? reg4_q    :
+                        ((dest_reg == Reg5)  ? reg5_q    :
+                        ((dest_reg == Reg6)  ? reg6_q    :
+                        reg7_q)))))));
 
     dest_reg_newvalue = source_reg_acc ? operand_primary    :
                         source_reg_alu ? alu_out_val        :
@@ -360,24 +367,23 @@ module tt_um_TscherterJunior_top (
                     ? 2'b11 : 2'b00;
 
     compare_flags[1] = (
-                $signed(reg0_q) > $signed((compare_mode[3] ? reg1_q : 8'b0000_0000)) &&   compare_mode[1] ||
+                ($signed(reg0_q) > $signed((compare_mode[3] ? reg1_q : 8'b0000_0000)) &&   compare_mode[1] ||
                 reg0_q == (compare_mode[3] ? reg1_q : 8'b0000_0000) && compare_mode[0]
-              ) ? 1'b1 : 1'b0; 
+              )) ? 1'b1 : 1'b0; 
 
     compare_flags[0] = (
-                reg0_q > (compare_mode[3] ? reg1_q : 8'b0000_0000) &&   compare_mode[1] ||
+                (reg0_q > (compare_mode[3] ? reg1_q : 8'b0000_0000) &&   compare_mode[1] ||
                 reg0_q == (compare_mode[3] ? reg1_q : 8'b0000_0000) && compare_mode[0]
-              ) ? 1'b1 : 1'b0;
+              )) ? 1'b1 : 1'b0;
 
-    mem_address = source_address_ip   ? instruction_pointer_q :
-                  source_address_reg  ? operand_secondary     :
-                  8'b1111_1111; // constand address used for paged jumps
+    mem_address = (source_address_ip   ? instruction_pointer_q :
+                  (source_address_reg  ? operand_secondary     :
+                  8'b1111_1111)); // constand address used for paged jumps
     
-    mem_write_data = state_q == Store_Data_state ?  operand_primary :
-                                                    reg7_q;           // source for page number when jumping
+    mem_write_data = ((state_q == Store_Data_state) ?  operand_primary : reg7_q; )          // source for page number when jumping
 
-    data_o = state_q == Fetch_state || state_q == Store_Address_state ||
-                        state_q == Load_state || state_q == Jump_Address_state ?
+    data_o = (state_q == Fetch_state || state_q == Store_Address_state ||
+                        state_q == Load_state || state_q == Jump_Address_state ) ?
                         mem_address : mem_write_data;
     
 
@@ -398,25 +404,25 @@ module tt_um_TscherterJunior_top (
 
   always @(*) begin
 
-    reg0_d = dest_reg == Reg0 && write_to_reg ? dest_reg_newvalue : reg0_q;
-    reg1_d = dest_reg == Reg1 && write_to_reg ? dest_reg_newvalue : reg1_q;
-    reg2_d = dest_reg == Reg2 && write_to_reg ? dest_reg_newvalue : reg2_q;
-    reg3_d = dest_reg == Reg3 && write_to_reg ? dest_reg_newvalue : reg3_q;
+    reg0_d = (dest_reg == Reg0 && write_to_reg) ? dest_reg_newvalue : reg0_q;
+    reg1_d = (dest_reg == Reg1 && write_to_reg) ? dest_reg_newvalue : reg1_q;
+    reg2_d = (dest_reg == Reg2 && write_to_reg) ? dest_reg_newvalue : reg2_q;
+    reg3_d = (dest_reg == Reg3 && write_to_reg) ? dest_reg_newvalue : reg3_q;
 
-    reg4_d = dest_reg == Reg4 && write_to_reg ? dest_reg_newvalue : reg4_q;
-    reg5_d = dest_reg == Reg5 && write_to_reg ? dest_reg_newvalue : reg5_q;
-    reg6_d = dest_reg == Reg6 && write_to_reg ? dest_reg_newvalue : reg6_q;
-    reg7_d = dest_reg == Reg7 && write_to_reg ? dest_reg_newvalue : reg7_q;
+    reg4_d = (dest_reg == Reg4 && write_to_reg) ? dest_reg_newvalue : reg4_q;
+    reg5_d = (dest_reg == Reg5 && write_to_reg) ? dest_reg_newvalue : reg5_q;
+    reg6_d = (dest_reg == Reg6 && write_to_reg) ? dest_reg_newvalue : reg6_q;
+    reg7_d = (dest_reg == Reg7 && write_to_reg) ? dest_reg_newvalue : reg7_q;
 
     // CPU Flags
-    flags_d = source_flag_decide  ? decide_flags :
-              source_flag_alu     ? alu_out_flags :
-              source_flag_compare ? compare_flags :
-              flags_q;
+    flags_d = (source_flag_decide  ? decide_flags :
+              (source_flag_alu     ? alu_out_flags :
+              (source_flag_compare ? compare_flags :
+              flags_q)));
 
 
     // Instruction Pointer
-    instruction_pointer_d = jump ? operand_secondary : instruction_pointer_q + 8'b0000_0001;
+    instruction_pointer_d = jump ? operand_secondary : (instruction_pointer_q + 8'b0000_0001);
 
     // Instruction Buffer
     instruction_buffer_d = state_q == Fetch_state ? data_i : instruction_buffer_q;
@@ -433,8 +439,10 @@ module tt_um_TscherterJunior_top (
   assign uio_out = 0;
   */
 
+  wire _unused_internal = &{compare_mode[2]};
+
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena};
+  wire _unused = &{ena,uio_in};
 
 endmodule
 
