@@ -22,7 +22,7 @@ module tt_um_TscherterJunior_ALU (
 
     always @(*) begin
         
-        acc_o = 8'b0000_00000;
+        acc_o = 8'b0000_0000;
         flags_o = 2'b00;
         tempres = 9'b0_0000_0000;
 

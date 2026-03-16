@@ -91,7 +91,9 @@ module tt_um_TscherterJunior_top (
   assign uo_out[0] = write_en_o;
   assign uo_out[1] = instr_en_o;
   //assign uo_out[4:2] = state_d; // unused uo_out pins(repurpouse for driving leds if time remains)
-  assign uo_out[4:2] = 3'b000;
+  //assign uo_out[4:2] = 3'b000;
+  assign uo_out[3:2] = flags_q;
+  assign uo_out[4]  = 1'b0;
   assign uo_out[7:5] = state_q;
 
 // Defining Constants
@@ -306,7 +308,7 @@ module tt_um_TscherterJunior_top (
       source_flag_alu     = (opcode[3:2] == 2'b00 || opcode[3:2] == 2'b11 || opcode == Xor_opc) && state_q == Fetch_state;
 
       use_imediate        = used_instruction[7:5] == Addi_opc_3;
-      jump                = (opcode == Jmp_opc && flags_q[0] && state_q == Fetch_state) || state_q == Jump_Data_state;
+      jump                = (opcode == Jmp_opc && flags_q[0] && state_q == Fetch_state); //|| state_q == Jump_Data_state;
 
       source_reg_alu     = source_flag_alu;
       source_reg_acc      = opcode == Str_opc && state_q == Fetch_state;
@@ -426,7 +428,9 @@ module tt_um_TscherterJunior_top (
 
 
     // Instruction Pointer
-    instruction_pointer_d = jump ? operand_secondary : (instruction_pointer_q + 8'b0000_0001);
+    instruction_pointer_d = state_q == Fetch_state ? 
+                          (jump ? operand_secondary : (instruction_pointer_q + 8'b0000_0001)): 
+                          instruction_pointer_q;
 
     // Instruction Buffer
     instruction_buffer_d = state_q == Fetch_state ? data_i : instruction_buffer_q;
