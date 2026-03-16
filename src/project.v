@@ -331,7 +331,7 @@ module tt_um_TscherterJunior_top (
 
     imediate          = {4'b0000, used_instruction[4], used_instruction[2:0]};
 
-    operand_primary   = used_acc == Reg0 ? reg0_q : reg1_d;
+    operand_primary   = used_acc == Reg0 ? reg0_q : reg1_q;
     operand_secondary = use_imediate      ? imediate  :
                         ((used_reg == Reg0)  ? reg0_q    :
                         ((used_reg == Reg1)  ? reg1_q    :
