@@ -268,7 +268,7 @@ module tt_um_TscherterJunior_top (
 
   // Control signals
   reg write_to_reg;
-  reg dest_reg;
+  reg [2:0] dest_reg;
 
   // flag sources
   reg source_flag_decide;

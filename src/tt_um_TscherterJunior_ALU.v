@@ -24,7 +24,7 @@ module tt_um_TscherterJunior_ALU (
         
         acc_o = 8'b0000_00000;
         flags_o = 2'b00;
-        tempres = 8'b0000_00000;
+        tempres = 8'b0000_0000;
 
         if(opcode_i[3:1] == 3'b000) begin // ADD imediate
 
