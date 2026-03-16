@@ -88,7 +88,8 @@ module tt_um_TscherterJunior_top (
 
   assign uo_out[0] = write_en_o;
   assign uo_out[1] = instr_en_o;
-  assign uo_out[4:2] = state_d; // unused uo_out pins(repurpouse for driving leds if time remains)
+  //assign uo_out[4:2] = state_d; // unused uo_out pins(repurpouse for driving leds if time remains)
+  assign uo_out[4:2] = 3'b000;
   assign uo_out[7:5] = state_q;
 
 // Defining Constants
