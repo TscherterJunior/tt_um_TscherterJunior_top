@@ -66,12 +66,12 @@ module tt_um_TscherterJunior_ALU (
                     flags_o[1] = ~^acc_o; //parity
                 end   
                 4'b1110 : begin // shift left logical
-                    acc_o = acc_i << operand_i[2:0];
+                    acc_o = acc_i << operand_i;//[2:0];
                     flags_o[0] = (acc_o == 8'b0);
                     flags_o[1] = acc_o[7]; //sign
                 end   
                 4'b1111 : begin // shift right logical
-                    acc_o = acc_i >> operand_i[2:0];
+                    acc_o = acc_i >> operand_i;//[2:0];
                     flags_o[0] = (acc_o == 8'b0);
                     flags_o[1] = acc_o[7]; //sign
                 end   

@@ -22,8 +22,15 @@ def signed_overflow_sub(a, b):
 
 # Opcode , alu operation, flag 1, flag 0
 alu_ops = [
-    [0b0010_0001, lambda x,y : (x+y) % 256, lambda x,y : (x + y) % 256 < x, signed_overflow_add, "ADD"],
-    [0b0011_0001, lambda x,y : (x-y) % 256, lambda x,y : not x >= y, signed_overflow_sub, "SUB"]
+    [0b0010_0001, lambda x,y : (x+y) % 256, lambda x,y : (x + y) % 256 < x,                 signed_overflow_add     , "ADD"],
+    [0b0011_0001, lambda x,y : (x-y) % 256, lambda x,y : not x >= y,                        signed_overflow_sub     , "SUB"],
+
+    [0b0111_0001, lambda x,y : x ^ y,       lambda x,y : bin(x ^ y).count("1") % 2 == 0,    lambda x,y : not x ^ y  , "XOR"],
+    [0b1100_0001, lambda x,y : x & y,       lambda x,y : bin(x & y).count("1") % 2 == 0,    lambda x,y : not x & y  , "AND"],
+    [0b1101_0001, lambda x,y : x | y,       lambda x,y : bin(x | y).count("1") % 2 == 0,    lambda x,y : not x | y  , "OR"],
+
+    [0b1110_0001, lambda x,y : (x << y) & 0b1111_1111,      lambda x,y : (x << y) & 0b1000_0000 != 0,       lambda x,y : not (x << y) & 0b1111_1111 , "SLL"],
+    [0b1111_0001, lambda x,y : (x >> y) & 0b1111_1111,      lambda x,y : (x >> y) & 0b1000_0000 != 0,       lambda x,y : not (x >> y) & 0b1111_1111 , "SRL"],
 ]
 
 @cocotb.test()
