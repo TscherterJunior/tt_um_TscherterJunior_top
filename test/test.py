@@ -34,7 +34,7 @@ alu_ops = [
     [0b1111_0001, lambda x,y : (x >> y) & 0b1111_1111,      lambda x,y : (x >> y) & 0b1000_0000 != 0,       lambda x,y : not (x >> y) & 0b1111_1111 , "SRL"],
 ]
 
-well = [False, False, False, False]
+#well = [False, False, False, False]
 
 @cocotb.test()
 async def ALU_test(dut):
@@ -330,7 +330,7 @@ async def decide(dut):
         for i in range(16):
             for j in range(4):
 
-                print("i: ",i, " j: ",j)
+                #print("i: ",i, " j: ",j)
 
                 # Set flags
                 await setflags(dut, [[False, False], [False, True], [True, False], [True, True]][j])
@@ -347,5 +347,82 @@ async def decide(dut):
 
                 assert bool(int(dut.uo_out.value) & 0b0000_0100) == expected
                 assert bool(int(dut.uo_out.value) & 0b0000_1000) == expected
+    finally:
+        await step()
+
+@cocotb.test()
+async def compare(dut):
+    dut._log.info(f"Testing Compare Op")
+
+    # Set the clock period to 10 us (100 KHz)
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    # Reset
+    dut._log.info("Reset CPU")
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 3)
+    dut.rst_n.value = 1
+
+    dut._log.info("Start of test")
+    # We will load the acc value from virtmem
+
+    async def step(num = 1,d = dut):
+        await ClockCycles(d.clk, num)
+        await ReadWrite()
+        assert dut.uio_oe.value == 0b1111_1111
+
+    await ReadWrite()
+
+    try:
+        for i in range(255):
+
+            #print("Working on iteration: ", i, end="\r")
+
+            for j in range(255):
+                for k in range(8):
+
+                    print(i, j, k)
+
+                    dut.ui_in.value = 0b1010_0010
+                    await step()
+                    dut.ui_in.value = i
+                    await step()
+
+                    dut.ui_in.value = 0b1010_1010
+                    await step()
+                    dut.ui_in.value = j
+                    await step()
+
+                    sufix = (k & 0b0011) | ((k & 0b0100) << 1)
+
+                    dut.ui_in.value = 0b0101_0000 | sufix
+
+                    await step()
+
+                    a = i & 0xFF
+                    b = j & 0xFF
+
+                    sa = a if a < 128 else a - 256
+                    sb = b if b < 128 else b - 256
+
+                    instruction = sufix
+
+                    signed_expected = False
+                    unsigned_expected = False
+
+                    if(not sufix & 0b1000):
+                        b,sb = 0, 0
+
+                    if(a > b and sufix & 0b0010): unsigned_expected = True
+                    if(sa > sb and sufix & 0b0010): signed_expected = True
+
+                    if(a == b and sufix & 0b0001): unsigned_expected,signed_expected = True, True
+
+                    assert bool(int(dut.uo_out.value) & 0b0000_0100) == unsigned_expected
+                    assert bool(int(dut.uo_out.value) & 0b0000_1000) == signed_expected
     finally:
         await step()
